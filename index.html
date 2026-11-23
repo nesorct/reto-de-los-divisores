@@ -211,11 +211,17 @@ button{font-family:inherit; cursor:pointer; border:none}
   <!-- PORTADA -->
   <section id="inicio">
     <h1 class="titulo">El reto de<span>los divisores</span></h1>
-    <p class="sub">Múltiplos, divisores, criterios, números primos, m.c.m. y m.c.d. Por equipos: responde, suma puntos y, si fallas, la pregunta rebota al equipo siguiente.</p>
+    <p class="sub">Múltiplos, divisores, criterios, números primos, m.c.m. y m.c.d. Por equipos o en solitario: responde, suma puntos y, si fallas, la pregunta rebota al equipo siguiente.</p>
 
     <div class="bloque">
-      <h2>¿Cuántos equipos?</h2>
+      <h2>¿Quién juega?</h2>
       <div class="opts" id="selEquipos"></div>
+    </div>
+
+    <div class="bloque" id="bloqueSolo" hidden>
+      <h2>¿Cuántas preguntas?</h2>
+      <div class="opts" id="selPreguntas"></div>
+      <p class="nota" id="notaSolo"></p>
     </div>
 
     <div class="bloque">
@@ -751,6 +757,7 @@ const nivelMax = () => NIVELES.length - 1;
 
 const estado = {
   nEquipos: 3, modo: "multiplos", nivel: 1, adapta: true,
+  limite: 10, hechas: 0, aciertos: 0,      // en solitario: cuántas preguntas, cuántas van y cuántas acertadas
   equipos: [], turno: 0, pregunta: null, respondida: false, enRebote: false, pistaVisible: false
 };
 
@@ -761,6 +768,12 @@ function valor(nivel){ return 4 + 2*nivel; }
 function generar(){ const n = nv(); const q = Divis.generar(estado.modo, n); q.nivel = n; return q; }
 
 const $ = id => document.getElementById(id);
+/* en solitario no hay rebote: se juega una tanda de preguntas y se guarda la mejor marca en este navegador */
+const solo = () => estado.equipos.length === 1;
+function textoSig(){ return solo() && estado.limite && estado.hechas + 1 >= estado.limite ? "Ver el resultado" : "Siguiente pregunta"; }
+function claveMarca(){ return "reto-divisores:" + estado.modo + ":" + estado.limite; }
+function leerMarca(){ try { return Number(localStorage.getItem(claveMarca())) || 0; } catch(e){ return 0; } }
+function guardarMarca(p){ try { localStorage.setItem(claveMarca(), String(p)); } catch(e){} }
 function puntosAhora(){
   const n = (estado.pregunta && estado.pregunta.nivel) || nv();
   return estado.enRebote ? Math.ceil(valor(n)/2) : valor(n);
@@ -771,8 +784,11 @@ function pintarMarcador(){
     '<div class="eq-fila"><b>'+e.nombre+'</b><i>'+e.puntos+'</i></div>'+
     '<small>Nivel '+e.nivel+' · '+NIVELES[e.nivel].nombre+'</small></div>').join("");
   const e = estado.equipos[estado.turno];
-  $("turno").innerHTML = (estado.enRebote? "Rebote: responde " : "Es el turno de ") +
-    '<b style="color:'+e.color+'">'+e.nombre+'</b> · <span style="opacity:.8">'+puntosAhora()+' puntos</span>';
+  $("turno").innerHTML = solo()
+    ? '<b>Pregunta '+(estado.hechas+1)+(estado.limite ? ' de '+estado.limite : '')+'</b> · '+estado.aciertos+' acierto'+(estado.aciertos===1?'':'s')+
+      ' · <span style="opacity:.8">esta vale '+puntosAhora()+' puntos</span>'
+    : (estado.enRebote? "Rebote: responde " : "Es el turno de ") +
+      '<b style="color:'+e.color+'">'+e.nombre+'</b> · <span style="opacity:.8">'+puntosAhora()+' puntos</span>';
 }
 /* sube al segundo acierto seguido y baja a cada fallo */
 function ajustarNivel(equipo, acierto){
@@ -825,7 +841,7 @@ function pintarBarra(){
     html += '<span class="nivelctl"><button class="btn mini" id="btnBaja" title="Bajar el nivel de este equipo">− nivel</button>'+
             '<button class="btn mini" id="btnSube" title="Subir el nivel de este equipo">+ nivel</button></span>';
   } else {
-    html += '<button class="btn principal" id="btnSig">Siguiente pregunta</button>';
+    html += '<button class="btn principal" id="btnSig">'+textoSig()+'</button>';
   }
   html += '<button class="btn" id="btnFin">Terminar partida</button>';
   $("barra").innerHTML = html;
@@ -846,6 +862,7 @@ function responder(i, boton){
     estado.respondida = true;
     boton.classList.add("bien");
     equipo.puntos += puntos;
+    estado.aciertos++;
     const salto = estado.enRebote ? 0 : ajustarNivel(equipo, true);
     pintarMarcador();
     cerrar('<span class="aviso ok">¡Correcto! +'+puntos+' puntos'+(salto>0 ? ' · '+equipo.nombre+' sube al nivel '+equipo.nivel : '')+'</span>');
@@ -885,11 +902,13 @@ function cerrar(mensaje){
     const ley = document.querySelector("#enunciado .leyenda");
     if(ley) ley.remove();
   }
-  $("barra").innerHTML = mensaje + '<button class="btn principal" id="btnSig">Siguiente pregunta</button><button class="btn" id="btnFin">Terminar partida</button>';
+  $("barra").innerHTML = mensaje + '<button class="btn principal" id="btnSig">'+textoSig()+'</button><button class="btn" id="btnFin">Terminar partida</button>';
   $("btnSig").addEventListener("click", siguiente);
   $("btnFin").addEventListener("click", terminar);
 }
 function siguiente(){
+  estado.hechas++;          // también cuenta la que se salta
+  if(solo() && estado.limite && estado.hechas >= estado.limite){ estado.respondida = false; terminar(); return; }
   /* el turno avanza siempre, también después de un rebote */
   estado.turno = (estado.turno+1) % estado.equipos.length;
   estado.enRebote = false; estado.respondida = false; estado.pistaVisible = false;
@@ -901,6 +920,16 @@ function terminar(){
   clearTimeout(estado.timerBarra);
   $("juego").style.display="none";
   $("final").style.display="flex";
+  if(solo()){
+    const e = estado.equipos[0], total = estado.hechas + (estado.respondida ? 1 : 0), antes = leerMarca();
+    const nueva = e.puntos > antes;
+    if(nueva) guardarMarca(e.puntos);
+    $("podio").innerHTML = '<div class="pod" style="background:'+e.color+'"><span>Has acertado '+estado.aciertos+' de '+total+
+      '<small>Acabaste en el nivel '+e.nivel+' · '+NIVELES[e.nivel].nombre+'</small></span><span>'+e.puntos+' puntos</span></div>'+
+      '<p class="nota" style="margin:0 auto; text-align:center">'+(nueva ? '🏆 ¡Nueva mejor marca en este tema!' : !antes ? 'Todavía no tienes marca en este tema: ¡a por ella en la siguiente!' :
+        'Tu mejor marca en este tema'+(estado.limite ? ' con '+estado.limite+' preguntas' : '')+': '+antes+' puntos.')+'</p>';
+    return;
+  }
   const orden = estado.equipos.slice().sort((a,b)=>b.puntos-a.puntos);
   $("podio").innerHTML = orden.map((e,i)=>
     '<div class="pod" style="background:'+e.color+'">'+
@@ -914,7 +943,12 @@ function chips(id, items, activo, alPulsar){
   Array.prototype.forEach.call($(id).children, b=>b.addEventListener("click", ()=>{ alPulsar(b.dataset.v); pintarPortada(); }));
 }
 function pintarPortada(){
-  chips("selEquipos", [2,3,4,5,6].map(n=>[n, n+" equipos"]), estado.nEquipos, v=>{ estado.nEquipos = Number(v); });
+  chips("selEquipos", [[1,"Solo yo"]].concat([2,3,4,5,6].map(n=>[n, n+" equipos"])), estado.nEquipos, v=>{ estado.nEquipos = Number(v); });
+  $("bloqueSolo").hidden = estado.nEquipos !== 1;
+  chips("selPreguntas", [[10,"10 preguntas"],[20,"20 preguntas"],[0,"Sin límite"]], estado.limite, v=>{ estado.limite = Number(v); });
+  $("notaSolo").textContent = estado.limite
+    ? "Al final verás cuántas has acertado y tu mejor marca, que se guarda solo en este navegador."
+    : "Juegas hasta que pulses «Terminar partida». Tu mejor marca se guarda solo en este navegador.";
   chips("selModo", Divis.MODOS, estado.modo, v=>{ estado.modo = v; });
   chips("selNivel", NIVELES.slice(1).map((x,i)=>[i+1, (i+1)+". "+x.nombre]), estado.nivel, v=>{ estado.nivel = Number(v); });
   const N = NIVELES[estado.nivel];
@@ -926,7 +960,8 @@ function pintarPortada(){
 }
 $("btnJugar").addEventListener("click", ()=>{
   estado.equipos = [];
-  for(let i=0;i<estado.nEquipos;i++) estado.equipos.push({nombre:NOMBRES[i], color:COLORES[i], puntos:0, nivel:estado.nivel, racha:0});
+  for(let i=0;i<estado.nEquipos;i++) estado.equipos.push({nombre: estado.nEquipos===1 ? "Tú" : NOMBRES[i], color:COLORES[i], puntos:0, nivel:estado.nivel, racha:0});
+  estado.hechas = 0; estado.aciertos = 0;
   estado.turno = 0; estado.enRebote=false; estado.respondida=false; estado.pistaVisible=false;
   $("juego").classList.remove("cerrada");
   estado.pregunta = generar();

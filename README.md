@@ -1,6 +1,6 @@
 # El reto de los divisores
 
-Juego por equipos de **divisibilidad** (múltiplos, divisores, criterios, números primos, m.c.m. y m.c.d.) para el
+Juego por equipos, o en solitario, de **divisibilidad** (múltiplos, divisores, criterios, números primos, m.c.m. y m.c.d.) para el
 Ámbito Científico de 2.º de ESO. Es el hermano de [El reto de los números](https://nesorct.github.io/reto-de-los-numeros/):
 la misma mecánica, para el tema siguiente. Se proyecta en la pizarra y juega la clase entera.
 
@@ -30,6 +30,13 @@ número…) para corregirla con toda la clase.
 
 En el m.c.m. y el m.c.d. también sale **«¿qué hay que calcular?»**: un problema y elegir entre el m.c.m., el m.c.d.,
 la suma o la multiplicación.
+
+## En solitario
+
+En «¿Quién juega?», **«Solo yo»**: para repasar en casa o en el ordenador del aula. Se elige una tanda de **10 o 20
+preguntas, o sin límite**; arriba se ve «Pregunta 3 de 10» y los aciertos, y al final, cuántas se han acertado, los
+puntos y **la mejor marca** de ese tema y esa tanda. La marca se guarda solo en ese navegador (`localStorage`), sin
+nombre ni cuenta. Sin rebote: si se falla, la buena se queda marcada y sale la solución.
 
 ## Los niveles
 
@@ -77,5 +84,5 @@ botones «Siguiente pregunta» y «Terminar partida» quedan siempre a la vista.
 
 ## Sin datos del alumnado
 
-Los equipos se llaman «Equipo 1», «Equipo 2»… No se escribe ningún nombre, no hay servidor ni cuenta y no se guarda
-nada: al recargar, la partida empieza de cero.
+Los equipos se llaman «Equipo 1», «Equipo 2»… No se escribe ningún nombre y no hay servidor ni cuenta. Lo único que se
+guarda es la mejor marca en solitario (un número por tema y tanda), y solo en el navegador de quien juega.
