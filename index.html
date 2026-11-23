@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El Reto de los Divisores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --stage:#152a63;
+  --stage-2:#0f1f4c;
+  --card:#ffffff;
+  --ink:#0d1b3e;
+  --ink-soft:#4a5980;
+  --chalk:#f4f7ff;
+  --line:#d7def0;
+  --sun:#ffc93c;
+  --mint:#3ecf9a;
+  --coral:#ff6b6b;
+  --lav:#b08bff;
+  --ok:#1f9d5a;
+  --bad:#d64040;
+  --num:#2743c4;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --stage:#0d1938; --stage-2:#070f24; --card:#182746; --ink:#f0f4ff;
+    --ink-soft:#a9b6d8; --line:#2e3f68; --chalk:#f0f4ff; --num:#9db6ff;
+  }
+}
+:root[data-theme="dark"]{
+  --stage:#0d1938; --stage-2:#070f24; --card:#182746; --ink:#f0f4ff;
+  --ink-soft:#a9b6d8; --line:#2e3f68; --chalk:#f0f4ff; --num:#9db6ff;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%}
+body{
+  margin:0; height:100%;
+  background:radial-gradient(120% 90% at 50% 0%, var(--stage) 0%, var(--stage-2) 100%);
+  color:var(--chalk);
+  font-family:Lexend, "Segoe UI", system-ui, sans-serif;
+  font-weight:600;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit; cursor:pointer; border:none}
+:focus-visible{outline:4px solid var(--sun); outline-offset:3px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important; transition:none!important}}
+
+.wrap{max-width:1400px; margin:0 auto; padding:clamp(12px,2vw,28px); min-height:100%; display:flex; flex-direction:column; gap:clamp(12px,2vh,22px)}
+
+/* ---------- Portada ---------- */
+#inicio{flex:1; display:flex; flex-direction:column; justify-content:center; gap:clamp(18px,3vh,34px); text-align:center}
+.titulo{font-size:clamp(2.4rem,8vw,5.5rem); font-weight:800; line-height:.95; letter-spacing:-.03em; margin:0}
+.titulo span{display:block; color:var(--sun)}
+.sub{color:#c6d2f2; font-weight:400; font-size:clamp(1rem,2.2vw,1.35rem); max-width:52ch; margin:0 auto; line-height:1.5}
+.bloque{background:rgba(255,255,255,.07); border:2px solid rgba(255,255,255,.14); border-radius:20px; padding:clamp(14px,2.4vw,24px)}
+.bloque h2{margin:0 0 14px; font-size:clamp(1rem,2vw,1.25rem); font-weight:600; color:#c6d2f2}
+.opts{display:flex; flex-wrap:wrap; gap:10px; justify-content:center}
+.chip{background:transparent; color:var(--chalk); border:2px solid rgba(255,255,255,.3); border-radius:999px; padding:.7em 1.4em; font-size:clamp(.95rem,1.8vw,1.15rem); font-weight:600}
+.chip[aria-pressed="true"]{background:var(--sun); color:#14203f; border-color:var(--sun)}
+.jugar{background:var(--mint); color:#06301f; font-size:clamp(1.3rem,3.4vw,2rem); font-weight:800; padding:.6em 1.6em; border-radius:18px; align-self:center}
+.jugar:hover{filter:brightness(1.08)}
+
+/* ---------- Marcador ---------- */
+.marcador{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px}
+.eq{border-radius:16px; padding:.5em .9em .55em; color:#10203f; opacity:.55; border:4px solid transparent}
+.eq.activo{opacity:1; border-color:var(--chalk); transform:translateY(-3px)}
+.eq-fila{display:flex; align-items:baseline; justify-content:space-between; gap:8px}
+.eq b{font-size:clamp(.85rem,1.6vw,1.05rem); font-weight:600}
+.eq i{font-style:normal; font-size:clamp(1.5rem,3.6vw,2.4rem); font-weight:800; font-variant-numeric:tabular-nums}
+.eq small{display:block; font-size:clamp(.7rem,1.3vw,.85rem); font-weight:600; opacity:.75; margin-top:-.15em}
+.nota{margin:.9em 0 0; font-size:clamp(.85rem,1.6vw,1rem); font-weight:400; color:#c6d2f2; line-height:1.45; max-width:62ch}
+.btn.mini{padding:.5em .8em; font-size:clamp(.85rem,1.6vw,1rem)}
+.nivelctl{display:inline-flex; gap:6px}
+.pod small{display:block; font-size:.62em; font-weight:600; opacity:.75; margin-top:.15em}
+
+/* ---------- Pregunta ---------- */
+#juego{flex:1; display:none; flex-direction:column; gap:clamp(10px,1.8vh,18px)}
+.turno{text-align:center; font-size:clamp(1rem,2.4vw,1.4rem); color:#c6d2f2; font-weight:400}
+.turno b{font-weight:800; color:var(--chalk)}
+.carta{background:var(--card); color:var(--ink); border-radius:24px; padding:clamp(16px,3vw,32px); text-align:center; flex:0 0 auto}
+.enunciado{font-size:clamp(1.4rem,4.4vw,2.9rem); font-weight:800; line-height:1.2; margin:0; letter-spacing:-.01em}
+.contexto{font-size:clamp(2.2rem,7vw,4rem); line-height:1; margin-bottom:.2em}
+.visual{margin-top:clamp(10px,2vh,20px)}
+.visual svg{width:100%; height:auto; max-height:26vh; display:block}
+
+.respuestas{display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.6vw,16px)}
+@media (max-width:560px){.respuestas{grid-template-columns:1fr}}
+.resp{
+  background:var(--card); color:var(--ink); border-radius:18px; border:4px solid transparent;
+  padding:clamp(12px,2.2vw,22px); font-size:clamp(1.4rem,4vw,2.6rem); font-weight:800;
+  display:flex; align-items:center; gap:.6em; font-variant-numeric:tabular-nums;
+}
+.resp .letra{background:var(--lav); color:#1b0c3a; width:1.5em; height:1.5em; border-radius:12px; display:grid; place-items:center; font-size:.55em; flex:0 0 auto}
+.resp:hover:not(:disabled){border-color:var(--sun)}
+.resp:disabled{cursor:default}
+.resp.bien{background:var(--ok); color:#fff; border-color:#fff}
+.resp.bien .letra{background:rgba(255,255,255,.3); color:#fff}
+.resp.mal{background:var(--bad); color:#fff}
+.resp.mal .letra{background:rgba(255,255,255,.3); color:#fff}
+.resp.gris{opacity:.4}
+
+.barra{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; min-height:3.4em}
+.btn{border-radius:14px; padding:.65em 1.3em; font-size:clamp(.95rem,2vw,1.25rem); font-weight:600; background:rgba(255,255,255,.12); color:var(--chalk); border:2px solid rgba(255,255,255,.25)}
+.btn:hover{background:rgba(255,255,255,.22)}
+.btn.principal{background:var(--sun); color:#14203f; border-color:var(--sun); font-weight:800}
+.btn.rebote{background:var(--coral); color:#fff; border-color:var(--coral); font-weight:800}
+.aviso{font-size:clamp(1rem,2.4vw,1.5rem); font-weight:800; text-align:center; width:100%}
+.aviso.ok{color:var(--mint)} .aviso.no{color:var(--coral)}
+
+.grande{display:block; margin-top:.25em; font-size:clamp(3rem,13vw,7.5rem); line-height:1; color:var(--num); letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+.grande.texto{font-size:clamp(1.6rem,5.2vw,3.4rem); line-height:1.15; letter-spacing:0}
+.respuestas.largo .resp{font-size:clamp(1.05rem,2.7vw,1.8rem); line-height:1.25; text-align:left}
+
+.marca{background:var(--sun); color:#14203f; border-radius:.12em; padding:0 .06em}
+.leyenda{display:block; font-size:clamp(.85rem,1.6vw,1.05rem); font-weight:400; color:var(--ink-soft); margin-top:.8em; line-height:1.4}
+.secundario{align-self:center; font-size:clamp(1rem,2.2vw,1.3rem)}
+
+/* ---------- Pizarra ---------- */
+#pizarra{display:none; flex:1; flex-direction:column; gap:clamp(10px,1.8vh,18px)}
+.pz-top{display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center}
+.pz-num{font-size:clamp(2.6rem,11vw,8rem); font-weight:800; line-height:1; color:var(--num); letter-spacing:-.02em; font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+.pz-num.texto{font-size:clamp(1.4rem,4.4vw,3rem); line-height:1.2; letter-spacing:0; color:var(--ink)}
+.pz-tit{margin:0 0 .3em; color:var(--ink-soft); font-weight:400; font-size:clamp(.9rem,1.8vw,1.1rem)}
+.pz-txt{margin:0; font-size:clamp(1.2rem,3.6vw,2.4rem); font-weight:800; line-height:1.25; overflow-wrap:anywhere}
+.pz-txt + .pz-tit{margin-top:.9em}
+.tabla-scroll{overflow-x:auto}
+.tabla{display:grid; gap:4px; min-width:min(100%,420px)}
+.tg,.th{color:#14203f; font-weight:800; text-align:center}
+.tg{font-size:clamp(.8rem,1.6vw,1.05rem); padding:.35em; border-radius:10px 10px 0 0}
+.th{font-size:clamp(.9rem,2vw,1.3rem); padding:.25em}
+.g-u.tg,.g-u.th{background:var(--sun)} .g-m.tg,.g-m.th{background:var(--mint)} .g-mi.tg,.g-mi.th{background:var(--lav)}
+.td{font-size:clamp(1.4rem,4.5vw,3.2rem); font-weight:800; padding:.2em 0; border-radius:10px; background:var(--card); color:var(--ink); border:3px solid var(--line); font-variant-numeric:tabular-nums}
+.td.g-u{border-color:var(--sun)} .td.g-m{border-color:var(--mint)} .td.g-mi{border-color:var(--lav)}
+.td.vacia{border-style:dashed; opacity:.35}
+.td.sel{background:var(--num); color:#fff}
+.pz-info{margin:.8em 0 0; font-size:clamp(1.05rem,2.6vw,1.6rem); font-weight:600}
+
+/* ---------- Podio ---------- */
+#final{display:none; flex:1; flex-direction:column; justify-content:center; text-align:center; gap:18px}
+.podio{display:flex; flex-direction:column; gap:10px; max-width:640px; margin:0 auto; width:100%}
+.pod{display:flex; align-items:center; justify-content:space-between; gap:12px; border-radius:16px; padding:.7em 1.1em; color:#10203f; font-size:clamp(1.1rem,3vw,1.8rem); font-weight:800}
+
+/* ---------- Combinadas: los corchetes y el paso a paso ---------- */
+.cor{font-weight:800}
+.grande sup, .pasos sup{font-size:.6em; line-height:0}
+/* en fila, como en la pizarra («2 · 2 − 6 = 4 − 6 = −2»): uno debajo de otro empujaba «Siguiente pregunta»
+   fuera de un proyector de 1366 × 768 */
+.pasos{display:flex; flex-wrap:wrap; justify-content:center; align-items:baseline; gap:.1em .7em; font-size:clamp(1rem,2vw,1.45rem); line-height:1.35; font-variant-numeric:tabular-nums}
+.pasos-t{margin:0; font-size:.62em; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft)}
+.pasos ol{display:contents; list-style:none; margin:0; padding:0}
+.pasos li{white-space:nowrap}
+.pasos.muchos{font-size:clamp(.95rem,1.7vw,1.2rem)}
+.pasos li::before{content:"= "; color:var(--ink-soft)}
+.pasos li:first-child::before{content:""}
+.pasos li:last-child{font-weight:800; color:var(--num)}
+
+/* ---------- divisibilidad (23-nov-2026) ---------- */
+.resp sup, .grande sup, .pz-txt sup, .sol sup{font-size:.6em; line-height:0}
+.hueco{display:inline-block; min-width:.8em; border-bottom:.12em solid var(--coral); color:var(--coral); margin:0 .04em}
+.sol{font-size:clamp(1rem,2vw,1.4rem); line-height:1.45; font-weight:600; text-align:center}
+.sol p{margin:.15em 0}
+.sol b{color:var(--num)}
+.filas{display:flex; flex-direction:column; gap:6px; align-items:flex-start; text-align:left; font-size:clamp(.85rem,1.7vw,1.15rem)}
+.fila{display:flex; flex-wrap:wrap; gap:4px; align-items:center}
+.fila .fe{font-weight:800; min-width:9.5em; color:var(--ink-soft)}
+.c{display:inline-block; min-width:2.1em; padding:.12em .3em; border:2px solid var(--line); border-radius:8px; text-align:center; font-variant-numeric:tabular-nums}
+.c.com{background:var(--mint); border-color:var(--mint); color:#06301f}
+.c.top{background:var(--sun); border-color:#d99a00; color:#14203f; font-weight:800; outline:3px solid #d99a00}
+.colfac{border-collapse:collapse; margin:0 auto; font-size:clamp(1.1rem,2.4vw,1.6rem); font-variant-numeric:tabular-nums}
+.colfac td{padding:.05em .55em}
+.colfac td:first-child{border-right:3px solid currentColor; text-align:right}
+.colfac td:last-child{color:var(--num); font-weight:800}
+.crit{border-collapse:collapse; margin:0 auto; font-size:clamp(.95rem,2vw,1.35rem); text-align:left}
+.crit td{padding:.25em .6em; border-bottom:1px solid var(--line)}
+.crit td:first-child{font-weight:800; color:var(--num); white-space:nowrap}
+.si{color:var(--ok); font-weight:800} .no{color:var(--bad); font-weight:800}
+.pz-cartas .carta{text-align:left}
+/* aqui las preguntas son de leer (problemas) y no de un solo numero: todo un poco mas pequeno que en el reto de los numeros */
+.enunciado.largo{font-size:clamp(1.1rem,2.6vw,1.75rem); line-height:1.3}
+.contexto{font-size:clamp(1.6rem,4vw,2.6rem)}
+.grande{font-size:clamp(2.4rem,8vw,4.6rem)}
+.resp{padding:clamp(10px,1.6vw,16px); font-size:clamp(1.3rem,3.2vw,2.2rem)}
+.grande{margin-top:.1em}
+#visual .crit{font-size:clamp(.85rem,1.6vw,1.1rem)}
+#visual .crit td{padding:.1em .5em}
+#visual .visual, #visual .sol{font-size:clamp(.95rem,1.8vw,1.25rem)}
+@media (min-width:700px){.respuestas.cortas{grid-template-columns:repeat(4,1fr)}}
+.critc{display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:clamp(.85rem,1.6vw,1.1rem); text-align:left; font-weight:600}
+.critc span{border:2px solid var(--line); border-radius:10px; padding:.25em .6em}
+.critc b{color:var(--num); margin-right:.35em}
+#juego.cerrada .filas{font-size:clamp(.8rem,1.5vw,1rem); gap:4px}
+/* al cerrar la pregunta, todo se encoge para que la solución y «Siguiente pregunta» quepan en un proyector de 1366 x 768 */
+#juego.cerrada .respuestas{gap:8px}
+#juego.cerrada .resp{padding:6px 14px; font-size:clamp(1rem,2.2vw,1.45rem); border-width:3px}
+#juego.cerrada .enunciado{font-size:clamp(1rem,2.4vw,1.6rem)}
+#juego.cerrada .grande{font-size:clamp(1.6rem,4vw,2.6rem)}
+#juego.cerrada .contexto{display:none!important}
+#juego.cerrada .carta{padding:12px 20px}
+#juego.cerrada .visual{margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- PORTADA -->
+  <section id="inicio">
+    <h1 class="titulo">El reto de<span>los divisores</span></h1>
+    <p class="sub">Múltiplos, divisores, criterios, números primos, m.c.m. y m.c.d. Por equipos: responde, suma puntos y, si fallas, la pregunta rebota al equipo siguiente.</p>
+
+    <div class="bloque">
+      <h2>¿Cuántos equipos?</h2>
+      <div class="opts" id="selEquipos"></div>
+    </div>
+
+    <div class="bloque">
+      <h2>¿Qué trabajamos?</h2>
+      <div class="opts" id="selModo"></div>
+    </div>
+
+    <div class="bloque">
+      <h2>¿Por qué nivel empiezan?</h2>
+      <div class="opts" id="selNivel"></div>
+      <p class="nota" id="notaNivel"></p>
+    </div>
+
+    <div class="bloque">
+      <h2>¿El nivel se mueve durante la partida?</h2>
+      <div class="opts" id="selAdapta"></div>
+      <p class="nota" id="notaAdapta"></p>
+    </div>
+
+    <button class="jugar" id="btnJugar">Empezar a jugar</button>
+    <button class="btn secundario" id="btnPizarra">Modo pizarra: un número al azar para trabajar toda la clase</button>
+  </section>
+
+  <!-- PIZARRA -->
+  <section id="pizarra">
+    <div class="pz-top">
+      <button class="btn" id="pzVolver">Volver al inicio</button>
+      <div class="opts" id="pzTope"></div>
+    </div>
+    <div class="carta"><div class="pz-num" id="pzNumero"></div></div>
+    <div class="barra">
+      <button class="btn principal" id="pzNuevo">Nuevo número</button>
+      <button class="btn" id="pzBtnDiv">Divisores</button>
+      <button class="btn" id="pzBtnMul">Múltiplos</button>
+      <button class="btn" id="pzBtnPrimo">¿Primo o compuesto?</button>
+      <button class="btn" id="pzBtnCrit">Criterios del 2, 3, 5 y 10</button>
+      <button class="btn" id="pzBtnFact">Factores primos</button>
+    </div>
+    <div class="pz-cartas">
+      <div class="carta" id="pzDiv" hidden></div>
+      <div class="carta" id="pzMul" hidden></div>
+      <div class="carta" id="pzPrimo" hidden></div>
+      <div class="carta" id="pzCrit" hidden></div>
+      <div class="carta" id="pzFact" hidden></div>
+    </div>
+  </section>
+
+  <!-- JUEGO -->
+  <section id="juego">
+    <div class="marcador" id="marcador"></div>
+    <p class="turno" id="turno"></p>
+    <div class="carta">
+      <p class="enunciado" id="enunciado"></p>
+      <div class="visual" id="visual"></div>
+    </div>
+    <div class="respuestas" id="respuestas"></div>
+    <div class="barra" id="barra"></div>
+  </section>
+
+  <!-- FINAL -->
+  <section id="final">
+    <h1 class="titulo">Resultado</h1>
+    <div class="podio" id="podio"></div>
+    <button class="jugar" id="btnOtra">Jugar otra partida</button>
+  </section>
+
+</div>
+
+<script id="motor-divisores">
+/* EL MOTOR: las preguntas de divisibilidad, sin tocar la página (lo prueba pruebas/test-divisores.js en Node).
+   Los contenidos y los tres niveles son los de las fichas de divisibilidad del ámbito de 2.º ESO:
+     múltiplos y divisores · criterios del 2, 3, 5 y 10 · números primos (solo hasta el 20) y factores primos ·
+     m.c.m. · m.c.d.
+   Las opciones falsas son errores de verdad: «acaba en 3, luego es divisible por 3», «el 1 es primo», olvidarse
+   del 1 o del propio número al dar los divisores, quedarse con un 4 o un 6 en la descomposición, multiplicar los
+   números en vez de buscar el m.c.m., dar el m.c.m. cuando piden el m.c.d. */
+var Divis = (function(){
+"use strict";
+var rnd = Math.random;
+function ale(a, b){ return a + Math.floor(rnd() * (b - a + 1)); }
+function elegir(arr){ return arr[Math.floor(rnd() * arr.length)]; }
+function barajar(arr){ var c = arr.slice(); for(var i = c.length - 1; i > 0; i--){ var j = ale(0, i), t = c[i]; c[i] = c[j]; c[j] = t; } return c; }
+
+var TOPE = [0, 50, 120, 300];
+var PRIMOS20 = [2, 3, 5, 7, 11, 13, 17, 19];
+
+function divisores(n){ var r = []; for(var d = 1; d <= n; d++) if(n % d === 0) r.push(d); return r; }
+function esPrimo(n){ return n > 1 && divisores(n).length === 2; }
+function mcd(a, b){ while(b){ var t = a % b; a = b; b = t; } return a; }
+function mcm(a, b){ return a / mcd(a, b) * b; }
+function mcdL(ns){ return ns.reduce(mcd); }
+function mcmL(ns){ return ns.reduce(mcm); }
+function factores(n){ var f = [], d = 2; while(n > 1){ while(n % d === 0){ f.push(d); n /= d; } d++; } return f; }
+function producto(l){ return l.reduce(function(a, b){ return a * b; }, 1); }
+function suma(l){ return l.reduce(function(a, b){ return a + b; }, 0); }
+function cifras(n){ return String(n).split("").map(Number); }
+function escribeFact(lista){
+  var c = {}, orden = [];
+  lista.forEach(function(p){ if(!(p in c)){ c[p] = 0; orden.push(p); } c[p]++; });
+  orden.sort(function(a, b){ return a - b; });
+  return orden.map(function(p){ return c[p] > 1 ? p + "<sup>" + c[p] + "</sup>" : String(p); }).join(" · ");
+}
+function lista(ns){ return ns.join(", "); }
+function nums(ns){ return ns.slice(0, -1).join(", ") + " y " + ns[ns.length - 1]; }
+
+/* busca un número que cumpla la condición; null si no aparece */
+function buscar(cond, desde, hasta, veces){
+  for(var i = 0; i < (veces || 600); i++){ var x = ale(desde, hasta); if(cond(x)) return x; }
+  return null;
+}
+/* de una lista de candidatos, los que valen, sin repetir y en desorden */
+function tomar(cands, cuantos, vale){
+  var r = [], s = {};
+  barajar(cands).forEach(function(x){ if(x !== null && r.length < cuantos && vale(x) && !s[x]){ s[x] = 1; r.push(x); } });
+  return r;
+}
+function preg(texto, correcta, distractores, extra){
+  var vistos = {}, ops = [String(correcta)];
+  vistos[ops[0]] = 1;
+  distractores.forEach(function(d){ var s = String(d); if(!vistos[s] && ops.length < 4){ vistos[s] = 1; ops.push(s); } });
+  return Object.assign({texto: texto, correcta: String(correcta), opciones: barajar(ops), visual: null, solucion: null}, extra || {});
+}
+function sol(lineas){ return '<div class="sol">' + lineas.map(function(l){ return "<p>" + l + "</p>"; }).join("") + "</div>"; }
+
+/* ---------- dibujos para la pista y la solución ---------- */
+function parejas(n){
+  var d = divisores(n), r = [];
+  for(var i = 0; i < d.length && d[i] <= n / d[i]; i++) r.push(d[i] + " × " + (n / d[i]));
+  return r.join(" &nbsp;·&nbsp; ");
+}
+function filasMultiplos(ns, marcar){
+  var m = mcmL(ns), hasta = m + Math.max.apply(null, ns);
+  return '<div class="filas">' + ns.map(function(k){
+    var cs = "";
+    for(var x = k; x <= hasta; x += k){
+      var com = ns.every(function(o){ return x % o === 0; });
+      cs += '<span class="c' + (marcar && x === m ? " top" : (marcar && com ? " com" : "")) + '">' + x + "</span>";
+    }
+    return '<div class="fila"><span class="fe">Múltiplos de ' + k + "</span>" + cs + "<span>…</span></div>";
+  }).join("") + "</div>";
+}
+function filasDivisores(ns, marcar){
+  var g = mcdL(ns);
+  return '<div class="filas">' + ns.map(function(k){
+    return '<div class="fila"><span class="fe">Divisores de ' + k + "</span>" + divisores(k).map(function(x){
+      var com = ns.every(function(o){ return o % x === 0; });
+      return '<span class="c' + (marcar && x === g ? " top" : (marcar && com ? " com" : "")) + '">' + x + "</span>";
+    }).join("") + "</div>";
+  }).join("") + "</div>";
+}
+function columna(n){
+  var f = factores(n), x = n, filas = "";
+  f.forEach(function(p){ filas += "<tr><td>" + x + "</td><td>" + p + "</td></tr>"; x /= p; });
+  filas += "<tr><td>1</td><td></td></tr>";
+  return '<table class="colfac">' + filas + "</table>";
+}
+function explica(x, d){
+  var u = x % 10;
+  if(d === 2) return "acaba en " + u + (u % 2 === 0 ? ', que es par → <span class="si">sí</span>' : ', que es impar → <span class="no">no</span>');
+  if(d === 3){ var c = cifras(x), s = suma(c); return c.join(" + ") + " = " + s + (s % 3 === 0 ? ', que está en la tabla del 3 → <span class="si">sí</span>' : ', que no está en la tabla del 3 → <span class="no">no</span>'); }
+  if(d === 5) return "acaba en " + u + (u === 0 || u === 5 ? ' → <span class="si">sí</span>' : ' → <span class="no">no</span>');
+  return "acaba en " + u + (u === 0 ? ' → <span class="si">sí</span>' : ' → <span class="no">no</span>');
+}
+function tablaCriterios(){
+  /* la pista: cuatro recuadros en dos filas (una tabla alta sacaba «Terminar partida» de un proyector de 768 px) */
+  return '<div class="critc"><span><b>Por 2</b> acaba en 0, 2, 4, 6 u 8</span><span><b>Por 3</b> la suma de sus cifras, en la tabla del 3</span>' +
+         '<span><b>Por 5</b> acaba en 0 o en 5</span><span><b>Por 10</b> acaba en 0</span></div>';
+}
+function tablaCriteriosLarga(){
+  return '<table class="crit">' +
+    "<tr><td>Por 2</td><td>si acaba en 0, 2, 4, 6 u 8 (en cifra par)</td></tr>" +
+    "<tr><td>Por 3</td><td>si la suma de sus cifras está en la tabla del 3</td></tr>" +
+    "<tr><td>Por 5</td><td>si acaba en 0 o en 5</td></tr>" +
+    "<tr><td>Por 10</td><td>si acaba en 0</td></tr></table>";
+}
+
+/* =====================================================================
+   1. MÚLTIPLOS Y DIVISORES
+   ===================================================================== */
+function kMult(n){ return n === 1 ? ale(2, 9) : n === 2 ? ale(3, 12) : ale(4, 15); }
+function noMultiplosCerca(c, k){
+  return tomar([c - 1, c + 1, c - 2, c + 2, c + Math.max(1, Math.floor(k / 2)), c + k + 1, c - k - 1, c + 3], 3,
+    function(x){ return x > 1 && x % k !== 0; });
+}
+function numConDivisores(n, minD, maxD, tope){
+  return buscar(function(x){ var c = divisores(x).length; return c >= minD && c <= maxD; }, 6, tope || TOPE[n]);
+}
+function noDivisoresCerca(N, d){
+  return tomar([d + 1, d - 1, d + 2, d + 3, 2 * N, N + 1, N - 1, d + 5], 3,
+    function(x){ return x > 1 && N % x !== 0; });
+}
+
+var MULTIPLOS = [
+  /* ¿cuál es múltiplo de k? */
+  {f: function(n){
+    var k = kMult(n), m = ale(2, Math.floor(TOPE[n] / k)), c = k * m;
+    return preg("¿Cuál de estos números es <b>múltiplo de " + k + "</b>?", c, noMultiplosCerca(c, k),
+      {tipo: "esMult", datos: {k: k, si: true}, leyenda: "Los múltiplos de " + k + " están en la tabla del " + k + ".",
+       solucion: sol(["<b>" + c + "</b> = " + k + " × " + m + ": está en la tabla del " + k + "."])}); }},
+  /* ¿cuál NO es múltiplo de k? */
+  {f: function(n){
+    var k = kMult(n), tope = Math.floor(TOPE[n] / k);
+    var ms = tomar(Array.from({length: tope - 1}, function(_, i){ return (i + 2) * k; }), 3, function(){ return true; });
+    var c = tomar([].concat.apply([], ms.map(function(x){ return [x + 1, x - 1, x + 2]; })), 1, function(x){ return x > 1 && x % k !== 0; })[0];
+    return preg("¿Cuál de estos números <b>NO</b> es múltiplo de " + k + "?", c, ms,
+      {tipo: "esMult", datos: {k: k, si: false},
+       solucion: sol([ms.map(function(x){ return x + " = " + k + " × " + (x / k); }).join(" &nbsp;·&nbsp; "),
+                      "<b>" + c + "</b> no está en la tabla del " + k + ": " + c + " : " + k + " no es exacta (sobra " + (c % k) + ")."])}); }},
+  /* ¿cuál es divisor de N? */
+  {f: function(n){
+    var N = numConDivisores(n, 4, 12, TOPE[n]), d = elegir(divisores(N).slice(1, -1));
+    return preg("¿Cuál de estos números es <b>divisor de " + N + "</b>?", d, noDivisoresCerca(N, d),
+      {tipo: "esDiv", datos: {N: N, si: true}, leyenda: "Un divisor de " + N + " lo divide exactamente: la división no deja resto.",
+       solucion: sol([N + " : " + d + " = " + (N / d) + ", exacta. Por eso <b>" + d + "</b> es divisor de " + N + ".",
+                      "Ojo: " + (2 * N) + " es <i>múltiplo</i> de " + N + ", no divisor."])}); }},
+  /* ¿cuál NO es divisor de N? */
+  {f: function(n){
+    var N = numConDivisores(n, 4, 12, TOPE[n]), ds = tomar(divisores(N), 3, function(){ return true; });
+    var c = tomar(ds.map(function(x){ return x + 1; }).concat([N - 1, N + 1, 2 * N]), 1, function(x){ return x > 1 && N % x !== 0; })[0];
+    return preg("¿Cuál de estos números <b>NO</b> es divisor de " + N + "?", c, ds,
+      {tipo: "esDiv", datos: {N: N, si: false},
+       solucion: sol(["Divisores de " + N + ": " + lista(divisores(N)) + ".", "<b>" + c + "</b> no está: " + N + " : " + c + " no es exacta.",
+                      "El 1 y el propio " + N + " también son divisores de " + N + "."])}); }},
+  /* los cinco primeros múltiplos */
+  {f: function(n){
+    var k = n === 1 ? ale(3, 9) : n === 2 ? ale(6, 15) : ale(11, 25), m = [1, 2, 3, 4, 5].map(function(i){ return i * k; });
+    return preg("¿Cuáles son los <b>cinco primeros múltiplos de " + k + "</b>?", lista(m),
+      [lista([2, 3, 4, 5, 6].map(function(i){ return i * k; })), lista([1].concat(m.slice(0, 4))),
+       lista([0, 2, 4, 6, 8].map(function(i){ return k + i; }))],
+      {tipo: "primerosMult", datos: {k: k},
+       solucion: sol([[1, 2, 3, 4, 5].map(function(i){ return k + " × " + i + " = " + (k * i); }).join(" &nbsp;·&nbsp; "),
+                      "El primer múltiplo de " + k + " es el propio " + k + "."])}); }},
+  /* todos los divisores */
+  {f: function(n){
+    var N = numConDivisores(n, 4, n === 1 ? 6 : 8, [0, 30, 60, 100][n]), D = divisores(N), L = D.length;
+    var falta = L >= 6 ? D.filter(function(x, i){ return i !== 1 && i !== L - 2; }) : D.filter(function(x, i){ return i !== 1; });
+    var intruso = buscar(function(x){ return N % x !== 0; }, 2, N - 1);
+    var con = D.concat([intruso]).sort(function(a, b){ return a - b; });
+    return preg("¿Cuáles son <b>todos los divisores de " + N + "</b>?", lista(D), [lista(D.slice(1, -1)), lista(falta), lista(con)],
+      {tipo: "todosDiv", datos: {N: N},
+       solucion: sol(["Por parejas que dan " + N + ": " + parejas(N) + ".", "Divisores de " + N + ": <b>" + lista(D) + "</b>."])}); }},
+  /* ¿cuántos divisores tiene? */
+  {f: function(n){
+    var N = numConDivisores(n, 4, 10, [0, 40, 80, 120][n]), c = divisores(N).length;
+    return preg("¿Cuántos divisores tiene el <b>" + N + "</b>?", c, [c - 2, c - 1, c + 1, c + 2].filter(function(x){ return x > 0; }),
+      {tipo: "cuantosDiv", datos: {N: N},
+       solucion: sol(["Por parejas: " + parejas(N) + ".", "Divisores: " + lista(divisores(N)) + " → <b>" + c + "</b>, contando el 1 y el " + N + "."])}); }},
+  /* reparto: un divisor en un problema */
+  {f: function(n){
+    var N = numConDivisores(n, 6, 12, TOPE[n]) || 24, d = elegir(divisores(N).slice(1, -1));
+    var c = elegir([
+      ["🍬", "Tienes " + N + " caramelos y quieres repartirlos en bolsas con el mismo número de caramelos, sin que sobre ninguno. ¿Cuántos puedes poner en cada bolsa?"],
+      ["🃏", "Tienes " + N + " cromos y quieres pegarlos en filas iguales, sin que sobre ninguno. ¿Cuántos cromos puede tener cada fila?"],
+      ["🪑", "Hay " + N + " sillas y hay que colocarlas en filas iguales, sin que sobre ninguna. ¿Cuántas sillas puede tener cada fila?"]]);
+    return preg(c[1], d, noDivisoresCerca(N, d),
+      {contexto: c[0], tipo: "esDiv", datos: {N: N, si: true},
+       solucion: sol(["Vale cualquier <b>divisor de " + N + "</b>: " + lista(divisores(N)) + ".", N + " : " + d + " = " + (N / d) + ", y no sobra nada."])}); }},
+  /* cajas enteras: un múltiplo en un problema */
+  {f: function(n){
+    var k = n === 1 ? ale(3, 6) : ale(4, 12), m = ale(3, Math.floor(TOPE[n] / k)), c0 = k * m;
+    var c = elegir([
+      ["🥚", "Los huevos se venden en cajas de " + k + ". ¿Cuántos huevos puedes tener si compras solo cajas enteras?"],
+      ["🥤", "Las latas se venden en paquetes de " + k + ". ¿Cuántas latas puedes tener si compras solo paquetes enteros?"],
+      ["🚌", "Un autobús pasa cada " + k + " minutos y acaba de pasar. ¿Dentro de cuántos minutos volverá a pasar también?"]]);
+    return preg(c[1], c0, noMultiplosCerca(c0, k),
+      {contexto: c[0], tipo: "esMult", datos: {k: k, si: true},
+       solucion: sol(["Vale cualquier <b>múltiplo de " + k + "</b>: " + c0 + " = " + k + " × " + m + "."])}); }},
+  /* ¿qué frase es cierta? */
+  {f: function(n){
+    var k = kMult(n), a = k * ale(2, Math.floor(TOPE[n] / k)), b = k;
+    function f(x, r, y){ return x + " es " + r + " de " + y; }
+    function cierta(x, r, y){ return r === "múltiplo" ? x % y === 0 : y % x === 0; }
+    var todas = [[a, "múltiplo", b], [b, "divisor", a], [b, "múltiplo", a], [a, "divisor", b],
+                 [a, "múltiplo", b + 1], [b + 1, "divisor", a], [a + 1, "múltiplo", b], [b, "divisor", a + 1]];
+    var si = todas.filter(function(t){ return cierta(t[0], t[1], t[2]); });
+    var no = todas.filter(function(t){ return !cierta(t[0], t[1], t[2]); });
+    var buena = elegir(si.slice(0, 2));
+    return preg("¿Qué frase es <b>cierta</b>?", f(buena[0], buena[1], buena[2]),
+      barajar(no).slice(0, 3).map(function(t){ return f(t[0], t[1], t[2]); }),
+      {tipo: "frase",
+       solucion: sol([a + " = " + b + " × " + (a / b) + ". Por eso " + a + " es <b>múltiplo</b> de " + b + " y " + b + " es <b>divisor</b> de " + a + ".",
+                      "El múltiplo es el grande; el divisor, el pequeño."])}); }}
+];
+
+/* =====================================================================
+   2. CRITERIOS DE DIVISIBILIDAD (2, 3, 5 y 10)
+   ===================================================================== */
+var RANGO = [null, [10, 99], [100, 999], [1000, 9999]];
+function trampa(d){
+  /* lo que parece divisible y no lo es: el error que de verdad cometen */
+  if(d === 2) return function(x){ return x % 2 === 1 && cifras(x)[0] % 2 === 0; };   // empieza por par
+  if(d === 3) return function(x){ return x % 3 !== 0 && x % 10 === 3; };              // acaba en 3
+  if(d === 5) return function(x){ return x % 5 !== 0 && String(x).indexOf("5") >= 0; }; // lleva un 5
+  return function(x){ return x % 10 !== 0 && (x % 5 === 0 || String(x).slice(0, -1).indexOf("0") >= 0); };
+}
+var CRITERIOS = [
+  /* ¿cuál es divisible por d? */
+  {f: function(n){
+    var d = elegir([2, 3, 3, 5, 10]), r = RANGO[n], c = buscar(function(x){ return x % d === 0; }, r[0], r[1]);
+    var t = trampa(d), ds = tomar([buscar(t, r[0], r[1]), buscar(t, r[0], r[1]), buscar(function(x){ return x % d !== 0; }, r[0], r[1]),
+                                   buscar(function(x){ return x % d !== 0; }, r[0], r[1])], 3, function(x){ return x !== c && x % d !== 0; });
+    var todos = [c].concat(ds);
+    return preg("¿Cuál de estos números es <b>divisible por " + d + "</b>?", c, ds,
+      {tipo: "divPor", datos: {d: d, si: true}, visual: tablaCriterios(), pistaTexto: "Ver los criterios",
+       solucion: sol(todos.map(function(x){ return "<b>" + x + "</b>: " + explica(x, d); }))}); }},
+  /* ¿cuál NO es divisible por d? */
+  {f: function(n){
+    var d = elegir([2, 3, 3, 5, 10]), r = RANGO[n], t = trampa(d);
+    var c = buscar(t, r[0], r[1]) || buscar(function(x){ return x % d !== 0; }, r[0], r[1]);
+    var ds = tomar([1, 2, 3, 4, 5, 6].map(function(){ return buscar(function(x){ return x % d === 0; }, r[0], r[1]); }), 3, function(x){ return x % d === 0; });
+    return preg("¿Cuál de estos números <b>NO</b> es divisible por " + d + "?", c, ds,
+      {tipo: "divPor", datos: {d: d, si: false}, visual: tablaCriterios(), pistaTexto: "Ver los criterios",
+       solucion: sol([c].concat(ds).map(function(x){ return "<b>" + x + "</b>: " + explica(x, d); }))}); }},
+  /* ¿por qué número es divisible? (solo por uno de los cuatro) */
+  {f: function(n){
+    var r = RANGO[n], cual = elegir([2, 3, 5]);
+    var cond = {2: function(x){ return x % 2 === 0 && x % 3 !== 0 && x % 5 !== 0; },
+                3: function(x){ return x % 3 === 0 && x % 2 !== 0 && x % 5 !== 0; },
+                5: function(x){ return x % 5 === 0 && x % 2 !== 0 && x % 3 !== 0; }}[cual];
+    var N = buscar(cond, r[0], r[1]);
+    return preg("El <b>" + N + "</b> es divisible por uno solo de estos números. ¿Por cuál?", "Por " + cual,
+      [2, 3, 5, 10].filter(function(d){ return d !== cual; }).map(function(d){ return "Por " + d; }),
+      {tipo: "porCual", datos: {N: N}, visual: tablaCriterios(), pistaTexto: "Ver los criterios",
+       solucion: sol([2, 3, 5, 10].map(function(d){ return "Por " + d + ": " + explica(N, d); }))}); }},
+  /* la cifra que falta */
+  {f: function(n){
+    var d = elegir([2, 3, 3, 5, 10]), k = n + 1, dig = [ale(1, 9)];
+    for(var i = 1; i < k; i++) dig.push(ale(0, 9));
+    var pos = d === 3 ? ale(0, k - 1) : k - 1;
+    function con(c){ var x = dig.slice(); x[pos] = c; return Number(x.join("")); }
+    var posibles = []; for(var c = (pos === 0 ? 1 : 0); c <= 9; c++) posibles.push(c);
+    var buenas = posibles.filter(function(c){ return con(c) % d === 0; }), malas = posibles.filter(function(c){ return con(c) % d !== 0; });
+    if(!buenas.length || malas.length < 3) return null;
+    var b = elegir(buenas), malasOrden = d === 10 ? [5].concat(barajar(malas.filter(function(x){ return x !== 5; }))) : barajar(malas);
+    var vista = dig.map(function(c, i){ return i === pos ? '<span class="hueco">?</span>' : c; }).join("");
+    return preg("¿Qué cifra falta para que el número sea <b>divisible por " + d + "</b>?", b, malasOrden.slice(0, 3),
+      {grande: vista, tipo: "cifra", datos: {d: d, dig: dig, pos: pos}, visual: tablaCriterios(), pistaTexto: "Ver los criterios",
+       solucion: sol(["Con un " + b + ": <b>" + con(b) + "</b>, " + explica(con(b), d) + ".",
+                      buenas.length > 1 ? "También valdrían: " + buenas.filter(function(x){ return x !== b; }).join(", ") + "." : "Es la única cifra que vale."])}); }},
+  /* ¿por qué es divisible? */
+  {f: function(n){
+    var r = RANGO[n], d = elegir([2, 3, 5]);
+    var R = {2: "Porque acaba en cifra par", 3: "Porque la suma de sus cifras está en la tabla del 3", 5: "Porque acaba en 0 o en 5"};
+    var falsa = {2: "Porque empieza por cifra par", 3: "Porque acaba en 3", 5: "Porque tiene un 5"}[d];
+    var cond = {2: function(x){ return x % 2 === 0 && x % 3 !== 0 && x % 5 !== 0; },
+                3: function(x){ return x % 3 === 0 && x % 2 !== 0 && x % 5 !== 0; },
+                5: function(x){ return x % 10 === 5 && x % 3 !== 0; }}[d];
+    var N = buscar(cond, r[0], r[1]);
+    return preg("El <b>" + N + "</b> es divisible por " + d + ". ¿Por qué?", R[d],
+      [2, 3, 5].filter(function(x){ return x !== d; }).map(function(x){ return R[x]; }).concat([falsa]),
+      {tipo: "razon", datos: {N: N, d: d}, solucion: sol(["<b>" + N + "</b>: " + explica(N, d) + "."])}); }}
+];
+
+/* =====================================================================
+   3. NÚMEROS PRIMOS (solo hasta el 20) Y FACTORES PRIMOS
+   ===================================================================== */
+var COMPUESTOS20 = [4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20];
+function porQuePrimo(x){
+  if(x === 1) return "<b>1</b>: solo tiene un divisor → ni primo ni compuesto";
+  var d = divisores(x);
+  return "<b>" + x + "</b>: divisores " + lista(d) + (d.length === 2 ? ' → <span class="si">primo</span>' : ' → <span class="no">compuesto</span>');
+}
+function factoresNivel(n){
+  var bolsa = [2, 2, 2, 3, 3, 5, 7], tam = n === 1 ? [3, 3] : n === 2 ? [3, 4] : [3, 5];
+  for(var i = 0; i < 400; i++){
+    var f = [], t = ale(tam[0], tam[1]);
+    for(var j = 0; j < t; j++) f.push(elegir(bolsa));
+    var N = producto(f);
+    var repe = f.some(function(p, k){ return f.indexOf(p) !== k; });
+    if(N >= [0, 12, 24, 48][n] && N <= TOPE[n] && repe) return f.sort(function(a, b){ return a - b; });
+  }
+  return [2, 2, 3];
+}
+var PRIMOS = [
+  /* ¿cuál es primo? */
+  {f: function(){
+    var c = elegir(PRIMOS20), ds = tomar([1, 1, 9, 15, 9, 15, 4, 6, 8, 10, 12, 14, 16, 18, 20], 3, function(){ return true; });
+    return preg("¿Cuál de estos números es <b>primo</b>?", c, ds,
+      {tipo: "esPrimo", datos: {si: true}, leyenda: "Un número primo solo tiene dos divisores: el 1 y él mismo.",
+       solucion: sol([c].concat(ds).map(porQuePrimo))}); }},
+  /* ¿cuál es compuesto? */
+  {f: function(){
+    var c = elegir([9, 15, 9, 15].concat(COMPUESTOS20)), ds = tomar([2, 3, 5, 7, 11, 13, 17, 19], 3, function(){ return true; });
+    return preg("¿Cuál de estos números es <b>compuesto</b>?", c, ds,
+      {tipo: "esPrimo", datos: {si: false}, leyenda: "Un número compuesto tiene más de dos divisores.",
+       solucion: sol([c].concat(ds).map(porQuePrimo))}); }},
+  /* ¿primo o compuesto? */
+  {f: function(){
+    var N = elegir([1, 2, 9, 15, 2, 3, 5, 7, 11, 13, 17, 19, 4, 6, 8, 10, 12, 14, 16, 18, 20]);
+    var buena = N === 1 ? "Ni primo ni compuesto" : esPrimo(N) ? "Primo" : "Compuesto";
+    return preg("El <b>" + N + "</b>, ¿es primo o compuesto?", buena,
+      ["Primo", "Compuesto", "Ni primo ni compuesto"].filter(function(x){ return x !== buena; }),
+      {minOps: 3, tipo: "pc", datos: {N: N}, solucion: sol([porQuePrimo(N)])}); }},
+  /* la descomposición en factores primos */
+  {min: 1, f: function(n){
+    var f = factoresNivel(n), N = producto(f), bien = escribeFact(f);
+    var junta = [f[0] * f[1]].concat(f.slice(2));                       // se queda con un 4 o un 6
+    var quita = f.slice(); quita.splice(f.findIndex(function(p, k){ return f.indexOf(p) !== k; }), 1);   // se le escapa uno
+    var pone = f.concat([elegir(f)]);                                    // uno de más
+    return preg("¿Cuál es la <b>descomposición en factores primos</b> de " + N + "?", bien,
+      [escribeFact(junta), escribeFact(quita), escribeFact(pone)],
+      {tipo: "fact", datos: {N: N}, leyenda: "Todos los factores tienen que ser primos y, multiplicados, dar " + N + ".",
+       solucion: '<div class="sol">' + columna(N) + "<p>" + N + " = <b>" + bien + "</b></p></div>"}); }},
+  /* ¿qué número es? */
+  {min: 2, f: function(n){
+    var f = factoresNivel(n), N = producto(f), unicos = f.filter(function(p, k){ return f.indexOf(p) === k; });
+    var c = {}; f.forEach(function(p){ c[p] = (c[p] || 0) + 1; });
+    var porExp = producto(Object.keys(c).map(function(p){ return c[p] > 1 ? p * c[p] : Number(p); }));
+    return preg("¿Qué número es este?", N, [producto(unicos), suma(f), porExp, N + unicos[0]],
+      {grande: escribeFact(f), tipo: "valorFact", datos: {f: f},
+       solucion: sol([escribeFact(f) + " = " + f.join(" · ") + " = <b>" + N + "</b>"])}); }}
+];
+
+/* =====================================================================
+   4. M.C.M. y 5. M.C.D.
+   ===================================================================== */
+function numerosMcm(n){
+  for(var i = 0; i < 800; i++){
+    var ns = n === 1 ? [ale(2, 10), ale(2, 10)] : n === 2 ? [ale(3, 20), ale(3, 20)] : [ale(2, 15), ale(2, 15), ale(2, 15)];
+    ns.sort(function(a, b){ return a - b; });
+    var m = mcmL(ns), distintos = ns.every(function(x, k){ return ns.indexOf(x) === k; });
+    if(distintos && m <= TOPE[n] && m > ns[ns.length - 1] && m / ns[0] <= 12) return ns;
+  }
+  return [4, 6];
+}
+function numerosMcd(n){
+  for(var i = 0; i < 800; i++){
+    var g = n === 1 ? ale(2, 9) : ale(2, 20), k = n === 3 ? 3 : 2, xs = [];
+    for(var j = 0; j < k; j++) xs.push(ale(1, n === 1 ? 6 : 8));
+    var ns = xs.map(function(x){ return x * g; }).sort(function(a, b){ return a - b; });
+    var distintos = ns.every(function(x, q){ return ns.indexOf(x) === q; });
+    if(distintos && mcdL(xs) === 1 && ns[ns.length - 1] <= (n === 3 ? 150 : TOPE[n])) return ns;
+  }
+  return [12, 18];
+}
+function mcmFalsas(ns){
+  var m = mcmL(ns);
+  return tomar([producto(ns), mcdL(ns), 2 * m, ns[ns.length - 1], suma(ns), m + ns[0]], 3, function(x){ return x > 0 && x !== m; });
+}
+function mcdFalsas(ns){
+  var g = mcdL(ns), dg = divisores(g).filter(function(x){ return x < g; });
+  return tomar([1, dg[dg.length - 1] || 1, ns[0], mcmL(ns), ns[1] - ns[0], g * 2], 3, function(x){ return x > 0 && x !== g; });
+}
+function problemaMcm(ns){
+  var a = ns[0], b = ns[1];
+  if(ns.length === 3) return ["⏰", "Tres alarmas suenan cada " + nums(ns) + " minutos. Acaban de sonar juntas. ¿Dentro de cuántos minutos vuelven a sonar las tres a la vez?", " min"];
+  return elegir([
+    ["🚌", "El autobús A pasa cada " + a + " minutos y el B, cada " + b + ". Acaban de pasar juntos. ¿Dentro de cuántos minutos vuelven a coincidir?", " min"],
+    ["🏊", "Lucía va a la piscina cada " + a + " días y Pablo, cada " + b + ". Hoy han coincidido. ¿Dentro de cuántos días vuelven a coincidir?", " días"],
+    ["💡", "Una luz se enciende cada " + a + " segundos y otra, cada " + b + ". Se acaban de encender a la vez. ¿Dentro de cuántos segundos se vuelven a encender juntas?", " s"]]);
+}
+function problemaMcd(ns){
+  var a = ns[0], b = ns[1];
+  if(ns.length === 3) return ["🧵", "Tienes tres cuerdas de " + nums(ns) + " cm. Quieres cortarlas en trozos iguales, lo más largos posible, sin que sobre nada. ¿Cuánto medirá cada trozo?", " cm"];
+  return elegir([
+    ["🍬", "Tienes " + a + " caramelos de fresa y " + b + " de limón. Quieres hacer bolsas iguales, de un solo sabor, lo más grandes posible y sin que sobre ninguno. ¿Cuántos caramelos irán en cada bolsa?", ""],
+    ["🧵", "Tienes dos cuerdas de " + a + " cm y " + b + " cm. Quieres cortarlas en trozos iguales, lo más largos posible, sin que sobre nada. ¿Cuánto medirá cada trozo?", " cm"],
+    ["💐", "Tienes " + a + " rosas y " + b + " margaritas. Quieres hacer el mayor número posible de ramos iguales, usando todas las flores. ¿Cuántos ramos puedes hacer?", ""]]);
+}
+function queCalcular(n){
+  var esMcm = rnd() < 0.5, ns = esMcm ? numerosMcm(n) : numerosMcd(n), p = esMcm ? problemaMcm(ns) : problemaMcd(ns);
+  var texto = p[1].replace(/¿[^?]*\?$/, "").trim();
+  var buena = esMcm ? "El m.c.m." : "El m.c.d.";
+  return preg(texto + " <b>¿Qué hay que calcular para resolverlo?</b>", buena,
+    [esMcm ? "El m.c.d." : "El m.c.m.", "La suma de los números", "La multiplicación de los números"],
+    {contexto: p[0], tipo: "queCalc", datos: {mcm: esMcm},
+     solucion: sol([esMcm ? "Algo que se <b>repite</b> y buscamos cuándo vuelve a <b>coincidir</b> → <b>m.c.m.</b>"
+                          : "<b>Repartir</b> en partes iguales, <b>lo más grandes posible</b> → <b>m.c.d.</b>",
+                    (esMcm ? "m.c.m." : "m.c.d.") + " (" + lista(ns) + ") = " + (esMcm ? mcmL(ns) : mcdL(ns))])});
+}
+var MCM = [
+  {f: function(n){
+    var ns = numerosMcm(n), m = mcmL(ns);
+    return preg("", m, mcmFalsas(ns),
+      {grande: "m.c.m. (" + lista(ns) + ")", tipo: "mcm", datos: {ns: ns}, visual: filasMultiplos(ns, false), pistaTexto: "Ver los múltiplos",
+       leyenda: "El mínimo común múltiplo: el múltiplo más pequeño que tienen en común.",
+       solucion: filasMultiplos(ns, true) + sol(["m.c.m. (" + lista(ns) + ") = <b>" + m + "</b>: el primer múltiplo que se repite en todas las filas."])}); }},
+  {f: function(n){
+    var ns = numerosMcm(n), m = mcmL(ns), p = problemaMcm(ns);
+    return preg(p[1], m, mcmFalsas(ns),
+      {contexto: p[0], sufijo: p[2], tipo: "mcm", datos: {ns: ns}, visual: filasMultiplos(ns, false), pistaTexto: "Ver los múltiplos",
+       solucion: filasMultiplos(ns, true) + sol(["Vuelven a coincidir en un múltiplo común: m.c.m. (" + lista(ns) + ") = <b>" + m + "</b>."])}); }},
+  {f: queCalcular}
+];
+var MCD = [
+  {f: function(n){
+    var ns = numerosMcd(n), g = mcdL(ns);
+    return preg("", g, mcdFalsas(ns),
+      {grande: "m.c.d. (" + lista(ns) + ")", tipo: "mcd", datos: {ns: ns}, visual: filasDivisores(ns, false), pistaTexto: "Ver los divisores",
+       leyenda: "El máximo común divisor: el divisor más grande que tienen en común.",
+       solucion: filasDivisores(ns, true) + sol(["m.c.d. (" + lista(ns) + ") = <b>" + g + "</b>: el mayor de los divisores comunes."])}); }},
+  {f: function(n){
+    var ns = numerosMcd(n), g = mcdL(ns), p = problemaMcd(ns);
+    return preg(p[1], g, mcdFalsas(ns),
+      {contexto: p[0], sufijo: p[2], tipo: "mcd", datos: {ns: ns}, visual: filasDivisores(ns, false), pistaTexto: "Ver los divisores",
+       solucion: filasDivisores(ns, true) + sol(["Partes iguales y lo más grandes posible: m.c.d. (" + lista(ns) + ") = <b>" + g + "</b>."])}); }},
+  {f: queCalcular}
+];
+
+var BANCOS = {multiplos: MULTIPLOS, criterios: CRITERIOS, primos: PRIMOS, mcm: MCM, mcd: MCD};
+var MODOS = [["multiplos", "Múltiplos y divisores"], ["criterios", "Criterios de divisibilidad"], ["primos", "Números primos y factores"],
+             ["mcm", "Mínimo común múltiplo"], ["mcd", "Máximo común divisor"], ["mixto", "Mezcla de todo"]];
+var NIVELES = [null,
+  {nombre: "Números pequeños", hasta: "hasta 50", nota: "las tablas hasta el 9; el m.c.m. y el m.c.d. de dos números pequeños."},
+  {nombre: "Números medianos", hasta: "hasta 120", nota: "el m.c.m. y el m.c.d. de dos números más grandes."},
+  {nombre: "Números grandes", hasta: "hasta 300", nota: "el m.c.m. y el m.c.d. de tres números a la vez."}];
+
+function generar(modo, nivel){
+  var banco = modo === "mixto" ? [].concat(MULTIPLOS, CRITERIOS, PRIMOS, MCM, MCD) : BANCOS[modo];
+  var aptos = banco.filter(function(g){ return nivel >= (g.min || 1) && nivel <= (g.max || 3); });
+  for(var i = 0; i < 60; i++){
+    var q = elegir(aptos).f(nivel);
+    if(q && q.correcta !== "undefined" && q.opciones.length >= (q.minOps || 4) && q.opciones.indexOf(q.correcta) >= 0) return q;
+  }
+  throw new Error("no sale ninguna pregunta en " + modo + ", nivel " + nivel);
+}
+
+return {generar: generar, MODOS: MODOS, NIVELES: NIVELES, divisores: divisores, esPrimo: esPrimo, factores: factores,
+        escribeFact: escribeFact, columna: columna, explica: explica, parejas: parejas, lista: lista,
+        _azar: function(f){ rnd = f; }};
+})();
+</script>
+
+<script>
+(function(){
+"use strict";
+
+const COLORES = ["#ffc93c","#3ecf9a","#ff6b6b","#b08bff","#5cc8ff","#ff9f5a"];
+const NOMBRES = ["Equipo 1","Equipo 2","Equipo 3","Equipo 4","Equipo 5","Equipo 6"];
+const LETRAS = ["A","B","C","D"];
+const NIVELES = Divis.NIVELES;
+const nivelMax = () => NIVELES.length - 1;
+
+const estado = {
+  nEquipos: 3, modo: "multiplos", nivel: 1, adapta: true,
+  equipos: [], turno: 0, pregunta: null, respondida: false, enRebote: false, pistaVisible: false
+};
+
+const ale = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+function nv(){ const e = estado.equipos[estado.turno]; return e ? e.nivel : estado.nivel; }
+/* a más nivel, más puntos: si no, al que va arriba le compensaría fallar */
+function valor(nivel){ return 4 + 2*nivel; }
+function generar(){ const n = nv(); const q = Divis.generar(estado.modo, n); q.nivel = n; return q; }
+
+const $ = id => document.getElementById(id);
+function puntosAhora(){
+  const n = (estado.pregunta && estado.pregunta.nivel) || nv();
+  return estado.enRebote ? Math.ceil(valor(n)/2) : valor(n);
+}
+function pintarMarcador(){
+  $("marcador").innerHTML = estado.equipos.map((e,i)=>
+    '<div class="eq'+(i===estado.turno?' activo':'')+'" style="background:'+e.color+'">'+
+    '<div class="eq-fila"><b>'+e.nombre+'</b><i>'+e.puntos+'</i></div>'+
+    '<small>Nivel '+e.nivel+' · '+NIVELES[e.nivel].nombre+'</small></div>').join("");
+  const e = estado.equipos[estado.turno];
+  $("turno").innerHTML = (estado.enRebote? "Rebote: responde " : "Es el turno de ") +
+    '<b style="color:'+e.color+'">'+e.nombre+'</b> · <span style="opacity:.8">'+puntosAhora()+' puntos</span>';
+}
+/* sube al segundo acierto seguido y baja a cada fallo */
+function ajustarNivel(equipo, acierto){
+  if(!estado.adapta) return 0;
+  if(acierto){
+    equipo.racha++;
+    if(equipo.racha>=2 && equipo.nivel<nivelMax()){ equipo.nivel++; equipo.racha=0; return 1; }
+  } else {
+    equipo.racha = 0;
+    if(equipo.nivel>1){ equipo.nivel--; return -1; }
+  }
+  return 0;
+}
+function moverNivel(d){
+  const e = estado.equipos[estado.turno];
+  const nuevo = Math.min(nivelMax(), Math.max(1, e.nivel+d));
+  if(nuevo===e.nivel) return;
+  const mueve = estado.adapta ? [e] : estado.equipos;
+  mueve.forEach(x=>{ x.nivel = Math.min(nivelMax(), Math.max(1, x.nivel+d)); x.racha = 0; });
+  if(!estado.adapta) estado.nivel = e.nivel;
+  if(!estado.respondida && !estado.enRebote){ estado.pregunta = generar(); pintarPregunta(); }
+  pintarMarcador();
+}
+function pintarPregunta(){
+  const q = estado.pregunta;
+  $("enunciado").innerHTML = (q.contexto ? '<span class="contexto" style="display:block">'+q.contexto+'</span>' : '') + q.texto +
+    (q.grande ? '<span class="grande'+(q.grande.replace(/<[^>]+>/g,"").length>12?' texto':'')+'">'+q.grande+'</span>' : '') +
+    (q.leyenda ? '<span class="leyenda">'+q.leyenda+'</span>' : '');
+  $("enunciado").classList.toggle("largo", q.texto.replace(/<[^>]+>/g,"").length > 70);
+  $("visual").innerHTML = (q.visual && estado.pistaVisible) ? q.visual : "";
+  $("respuestas").classList.toggle("largo", q.opciones.some(o=>o.replace(/<[^>]+>/g,"").length>9));
+  /* respuestas cortas (una cifra, un número): en una sola fila, que deja sitio a la pista */
+  $("respuestas").classList.toggle("cortas", q.opciones.every(o=>o.replace(/<[^>]+>/g,"").length<=4));
+  $("respuestas").innerHTML = q.opciones.map((op,i)=>
+    '<button class="resp" data-op="'+i+'"><span class="letra">'+LETRAS[i]+'</span><span>'+op+(q.sufijo && /^\d+$/.test(op) ? q.sufijo : "")+'</span></button>'
+  ).join("");
+  Array.prototype.forEach.call(document.querySelectorAll(".resp"), b=>{
+    b.addEventListener("click", ()=>responder(Number(b.dataset.op), b));
+  });
+  pintarBarra();
+}
+function pintarBarra(){
+  const q = estado.pregunta;
+  let html = "";
+  if(!estado.respondida && q.visual){
+    html += '<button class="btn" id="btnPista">'+(estado.pistaVisible ? "Ocultar la pista" : (q.pistaTexto || "Ver la pista"))+'</button>';
+  }
+  if(!estado.respondida){
+    html += '<button class="btn" id="btnSaltar">Saltar pregunta</button>';
+    html += '<span class="nivelctl"><button class="btn mini" id="btnBaja" title="Bajar el nivel de este equipo">− nivel</button>'+
+            '<button class="btn mini" id="btnSube" title="Subir el nivel de este equipo">+ nivel</button></span>';
+  } else {
+    html += '<button class="btn principal" id="btnSig">Siguiente pregunta</button>';
+  }
+  html += '<button class="btn" id="btnFin">Terminar partida</button>';
+  $("barra").innerHTML = html;
+  if($("btnSig")) $("btnSig").addEventListener("click", siguiente);
+  if($("btnPista")) $("btnPista").addEventListener("click", ()=>{ estado.pistaVisible=!estado.pistaVisible; $("visual").innerHTML = estado.pistaVisible? q.visual : ""; pintarBarra(); });
+  if($("btnSaltar")) $("btnSaltar").addEventListener("click", siguiente);
+  if($("btnBaja")) $("btnBaja").addEventListener("click", ()=>moverNivel(-1));
+  if($("btnSube")) $("btnSube").addEventListener("click", ()=>moverNivel(1));
+  $("btnFin").addEventListener("click", terminar);
+}
+function responder(i, boton){
+  if(estado.respondida) return;
+  const q = estado.pregunta;
+  const acierto = q.opciones[i] === q.correcta;
+  const puntos = puntosAhora();
+  const equipo = estado.equipos[estado.turno];
+  if(acierto){
+    estado.respondida = true;
+    boton.classList.add("bien");
+    equipo.puntos += puntos;
+    const salto = estado.enRebote ? 0 : ajustarNivel(equipo, true);
+    pintarMarcador();
+    cerrar('<span class="aviso ok">¡Correcto! +'+puntos+' puntos'+(salto>0 ? ' · '+equipo.nombre+' sube al nivel '+equipo.nivel : '')+'</span>');
+  } else {
+    boton.classList.add("mal");
+    boton.disabled = true;
+    if(!estado.enRebote && estado.equipos.length>1){
+      const salto = ajustarNivel(equipo, false);
+      estado.enRebote = true;
+      estado.turno = (estado.turno+1) % estado.equipos.length;
+      pintarMarcador();
+      $("barra").innerHTML = '<span class="aviso no">Fallo. Rebota al siguiente equipo por '+puntosAhora()+' puntos.'+
+        (salto<0 ? ' '+equipo.nombre+' baja al nivel '+equipo.nivel+'.' : '')+'</span>';
+      /* se guarda para cancelarlo: si el rebote se contesta antes de 1,4 s, no debe borrar «Siguiente pregunta» */
+      estado.timerBarra = setTimeout(pintarBarra, 1400);
+    } else {
+      if(!estado.enRebote) ajustarNivel(equipo, false);
+      estado.respondida = true;
+      pintarMarcador();
+      cerrar('<span class="aviso no">No era esa. La respuesta correcta se queda marcada.</span>');
+    }
+  }
+}
+function cerrar(mensaje){
+  clearTimeout(estado.timerBarra);
+  const q = estado.pregunta;
+  $("juego").classList.add("cerrada");
+  Array.prototype.forEach.call(document.querySelectorAll(".resp"), b=>{
+    b.disabled = true;
+    const val = q.opciones[Number(b.dataset.op)];
+    if(val === q.correcta) b.classList.add("bien");
+    else if(!b.classList.contains("mal")) b.classList.add("gris");
+  });
+  /* la solución, para corregirla con toda la clase; ocupa el sitio del recordatorio */
+  if(q.solucion){
+    $("visual").innerHTML = q.solucion;
+    const ley = document.querySelector("#enunciado .leyenda");
+    if(ley) ley.remove();
+  }
+  $("barra").innerHTML = mensaje + '<button class="btn principal" id="btnSig">Siguiente pregunta</button><button class="btn" id="btnFin">Terminar partida</button>';
+  $("btnSig").addEventListener("click", siguiente);
+  $("btnFin").addEventListener("click", terminar);
+}
+function siguiente(){
+  /* el turno avanza siempre, también después de un rebote */
+  estado.turno = (estado.turno+1) % estado.equipos.length;
+  estado.enRebote = false; estado.respondida = false; estado.pistaVisible = false;
+  $("juego").classList.remove("cerrada");
+  estado.pregunta = generar();
+  pintarMarcador(); pintarPregunta();
+}
+function terminar(){
+  clearTimeout(estado.timerBarra);
+  $("juego").style.display="none";
+  $("final").style.display="flex";
+  const orden = estado.equipos.slice().sort((a,b)=>b.puntos-a.puntos);
+  $("podio").innerHTML = orden.map((e,i)=>
+    '<div class="pod" style="background:'+e.color+'">'+
+    '<span>'+(i===0?"🏆 ":"")+e.nombre+'<small>Acabó en el nivel '+e.nivel+' · '+NIVELES[e.nivel].nombre+'</small></span>'+
+    '<span>'+e.puntos+' puntos</span></div>').join("");
+}
+
+/* ---------- portada ---------- */
+function chips(id, items, activo, alPulsar){
+  $(id).innerHTML = items.map(it=>'<button class="chip" data-v="'+it[0]+'" aria-pressed="'+(String(it[0])===String(activo))+'">'+it[1]+'</button>').join("");
+  Array.prototype.forEach.call($(id).children, b=>b.addEventListener("click", ()=>{ alPulsar(b.dataset.v); pintarPortada(); }));
+}
+function pintarPortada(){
+  chips("selEquipos", [2,3,4,5,6].map(n=>[n, n+" equipos"]), estado.nEquipos, v=>{ estado.nEquipos = Number(v); });
+  chips("selModo", Divis.MODOS, estado.modo, v=>{ estado.modo = v; });
+  chips("selNivel", NIVELES.slice(1).map((x,i)=>[i+1, (i+1)+". "+x.nombre]), estado.nivel, v=>{ estado.nivel = Number(v); });
+  const N = NIVELES[estado.nivel];
+  $("notaNivel").textContent = N.nombre + ", " + N.hasta + ": " + N.nota + " Los números primos, siempre hasta el 20.";
+  chips("selAdapta", [[true,"Sube y baja solo"],[false,"Fijo para todos"]], estado.adapta, v=>{ estado.adapta = (v==="true"); });
+  $("notaAdapta").textContent = estado.adapta
+    ? "Cada equipo lleva su propio nivel: sube al segundo acierto seguido y baja a cada fallo. Acertar en un nivel alto vale más puntos, así que nadie gana por quedarse abajo."
+    : "Todos los equipos juegan siempre en el mismo nivel. Durante la partida puedes moverlo a mano con «+ nivel» y «− nivel».";
+}
+$("btnJugar").addEventListener("click", ()=>{
+  estado.equipos = [];
+  for(let i=0;i<estado.nEquipos;i++) estado.equipos.push({nombre:NOMBRES[i], color:COLORES[i], puntos:0, nivel:estado.nivel, racha:0});
+  estado.turno = 0; estado.enRebote=false; estado.respondida=false; estado.pistaVisible=false;
+  $("juego").classList.remove("cerrada");
+  estado.pregunta = generar();
+  $("inicio").style.display="none"; $("final").style.display="none"; $("juego").style.display="flex";
+  pintarMarcador(); pintarPregunta();
+});
+$("btnOtra").addEventListener("click", ()=>{ $("final").style.display="none"; $("inicio").style.display="flex"; pintarPortada(); });
+
+/* ---------- modo pizarra: un número para trabajarlo con toda la clase ---------- */
+const pz = {tope: 120, n: 36};
+const PZ_CARTAS = ["pzDiv","pzMul","pzPrimo","pzCrit","pzFact"];
+function pzChips(){
+  $("pzTope").innerHTML = [50,120,300].map(t=>'<button class="chip" data-t="'+t+'" aria-pressed="'+(t===pz.tope)+'">Hasta '+t+'</button>').join("");
+  Array.prototype.forEach.call($("pzTope").children, b=>b.addEventListener("click", ()=>{ pz.tope = Number(b.dataset.t); pzChips(); pzNuevo(); }));
+}
+function pzPintar(){
+  const n = pz.n, D = Divis.divisores(n);
+  $("pzNumero").textContent = n;
+  $("pzDiv").innerHTML = '<p class="pz-tit">Divisores de '+n+', por parejas que dan '+n+'</p><p class="pz-txt">'+Divis.parejas(n)+'</p>'+
+    '<p class="pz-tit">Todos sus divisores ('+D.length+')</p><p class="pz-txt">'+Divis.lista(D)+'</p>';
+  const M = []; for(let i=1;i<=10;i++) M.push(n*i);
+  $("pzMul").innerHTML = '<p class="pz-tit">Los diez primeros múltiplos de '+n+' (la tabla del '+n+')</p><p class="pz-txt">'+Divis.lista(M)+'…</p>';
+  $("pzPrimo").innerHTML = '<p class="pz-tit">¿Primo o compuesto?</p><p class="pz-txt">'+
+    (n===1 ? "El 1 solo tiene un divisor: no es ni primo ni compuesto."
+      : Divis.esPrimo(n) ? n+" es <span class=\"si\">primo</span>: solo tiene dos divisores, el 1 y el "+n+"."
+      : n+" es <span class=\"no\">compuesto</span>: tiene "+D.length+" divisores, más de dos.")+'</p>';
+  $("pzCrit").innerHTML = '<p class="pz-tit">¿Es divisible por…?</p><table class="crit">'+
+    [2,3,5,10].map(d=>'<tr><td>Por '+d+'</td><td>'+Divis.explica(n,d)+'</td></tr>').join("")+'</table>';
+  $("pzFact").innerHTML = '<p class="pz-tit">Descomposición en factores primos</p>'+
+    (n<2 ? '<p class="pz-txt">El 1 no se descompone.</p>'
+      : Divis.esPrimo(n) ? '<p class="pz-txt">'+n+' es primo: ya no se puede descomponer.</p>'
+      : '<div class="sol">'+Divis.columna(n)+'<p>'+n+' = <b>'+Divis.escribeFact(Divis.factores(n))+'</b></p></div>');
+}
+function pzNuevo(){
+  let n, g = 0;
+  do { n = ale(2, pz.tope); } while(n===pz.n && g++<20);
+  pz.n = n;
+  PZ_CARTAS.forEach(id=>{ $(id).hidden = true; });
+  pzPintar();
+}
+$("btnPizarra").addEventListener("click", ()=>{ $("inicio").style.display="none"; $("pizarra").style.display="flex"; pzChips(); pzNuevo(); });
+$("pzVolver").addEventListener("click", ()=>{ $("pizarra").style.display="none"; $("inicio").style.display="flex"; });
+$("pzNuevo").addEventListener("click", pzNuevo);
+[["pzBtnDiv","pzDiv"],["pzBtnMul","pzMul"],["pzBtnPrimo","pzPrimo"],["pzBtnCrit","pzCrit"],["pzBtnFact","pzFact"]].forEach(p=>{
+  $(p[0]).addEventListener("click", ()=>{ $(p[1]).hidden = !$(p[1]).hidden; });
+});
+
+/* teclado: A-D o 1-4 para responder, Enter para seguir; en la pizarra, la flecha derecha saca otro número */
+document.addEventListener("keydown", e=>{
+  if($("pizarra").style.display==="flex" && (e.key==="ArrowRight" || e.key==="PageDown")){ pzNuevo(); e.preventDefault(); return; }
+  if($("juego").style.display!=="flex") return;
+  const k = e.key.toLowerCase();
+  let idx = ["a","b","c","d"].indexOf(k); if(idx<0) idx = ["1","2","3","4"].indexOf(k);
+  if(idx>=0){
+    const b = document.querySelector('.resp[data-op="'+idx+'"]');
+    if(b && !b.disabled){ b.click(); e.preventDefault(); }
+  } else if(e.key==="Enter" && $("btnSig")){ $("btnSig").click(); e.preventDefault(); }
+});
+
+pintarPortada();
+})();
+</script>
+</body>
+</html>
